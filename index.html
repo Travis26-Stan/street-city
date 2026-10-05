@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Street City - iPhone Test</title>
+<style>
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#67a85b}
+#hud{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:5;color:#fff;background:#000b;padding:9px 12px;border-radius:10px;font-size:13px}
+#stick{position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:132px;height:132px;border:3px solid #fff8;border-radius:50%;background:#0005;z-index:6;touch-action:none}
+#knob{position:absolute;left:38px;top:38px;width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid #222}
+#test{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(26px,env(safe-area-inset-bottom));z-index:6;border:0;border-radius:18px;padding:20px 18px;background:#1677ff;color:#fff;font-weight:800;font-size:16px;touch-action:manipulation}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">STREET CITY TEST<br><span id="status">JS: starting…</span><br><span id="moves">Movement: 0</span></div>
+<div id="stick"><div id="knob"></div></div>
+<button id="test">TEST BUTTON</button>
+<script>
+(()=> {
+ const c=document.getElementById('game'),x=c.getContext('2d'),status=document.getElementById('status'),
+ moves=document.getElementById('moves'),stick=document.getElementById('stick'),knob=document.getElementById('knob'),
+ btn=document.getElementById('test');
+ let W=0,H=0,dpr=1,px=0,py=0,vx=0,vy=0,count=0,pid=null,last=performance.now();
+ function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(dpr,0,0,dpr,0,0);if(!px){px=W/2;py=H/2}}
+ addEventListener('resize',resize); resize();
+ status.textContent='JS: RUNNING ✓';
+ function setStick(e){
+   const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+   let dx=e.clientX-cx,dy=e.clientY-cy,mag=Math.hypot(dx,dy),max=42;
+   if(mag>max){dx=dx/mag*max;dy=dy/mag*max}
+   knob.style.transform=`translate(${dx}px,${dy}px)`;
+   vx=dx/max;vy=dy/max;
+ }
+ stick.addEventListener('pointerdown',e=>{e.preventDefault();pid=e.pointerId;stick.setPointerCapture(pid);setStick(e)});
+ stick.addEventListener('pointermove',e=>{if(e.pointerId===pid){e.preventDefault();setStick(e)}});
+ function release(e){if(pid===null||e.pointerId===pid){pid=null;vx=vy=0;knob.style.transform='translate(0,0)'}}
+ stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+ btn.addEventListener('click',()=>{btn.textContent=btn.textContent==='WORKS ✓'?'TEST BUTTON':'WORKS ✓';status.textContent='JS + BUTTON: WORKING ✓'});
+ function draw(t){
+   let dt=Math.min((t-last)/1000,.05);last=t;
+   if(Math.abs(vx)+Math.abs(vy)>.04){px+=vx*190*dt;py+=vy*190*dt;count++;moves.textContent='Movement: '+count}
+   px=Math.max(12,Math.min(W-12,px));py=Math.max(12,Math.min(H-12,py));
+   x.fillStyle='#67a85b';x.fillRect(0,0,W,H);
+   x.fillStyle='#3d4248';
+   for(let yy=-80;yy<H+100;yy+=180)x.fillRect(0,yy, W,70);
+   for(let xx=-60;xx<W+100;xx+=220)x.fillRect(xx,0,70,H);
+   x.strokeStyle='#e8d56b';x.lineWidth=2;x.setLineDash([14,14]);
+   for(let yy=-45;yy<H+100;yy+=180){x.beginPath();x.moveTo(0,yy);x.lineTo(W,yy);x.stroke()}
+   for(let xx=-25;xx<W+100;xx+=220){x.beginPath();x.moveTo(xx,0);x.lineTo(xx,H);x.stroke()}
+   x.setLineDash([]);
+   x.fillStyle='#1769ff';x.beginPath();x.arc(px,py,13,0,Math.PI*2);x.fill();
+   x.fillStyle='#fff';x.beginPath();x.arc(px,py,5,0,Math.PI*2);x.fill();
+   requestAnimationFrame(draw);
+ }
+ requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
